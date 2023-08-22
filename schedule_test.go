@@ -226,6 +226,40 @@ func TestSchedule_CreateOverride(t *testing.T) {
 	testEqual(t, want, res)
 }
 
+// Create an override
+func TestSchedule_CreateOverrides(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/schedules/1/overrides", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, "POST")
+		_, _ = w.Write([]byte(`{"overrides": [{"id": "1", "start": "foo", "end": "bar"}]}`))
+	})
+
+	client := defaultTestClient(server.URL, "foo")
+	input := []Override{
+		{
+			Start: "foo",
+			End:   "bar",
+		},
+	}
+	schedID := "1"
+
+	res, err := client.CreateOverrides(schedID, input)
+
+	want := Override{
+		ID:    "1",
+		Start: "foo",
+		End:   "bar",
+	}
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	testEqual(t, 1, len(res))
+	testEqual(t, want, res[0])
+}
+
 // Delete an override
 func TestSchedule_DeleteOverride(t *testing.T) {
 	setup()

@@ -301,6 +301,23 @@ func (c *Client) CreateOverrideWithContext(ctx context.Context, id string, o Ove
 	return getOverrideFromResponse(c, resp)
 }
 
+func (c *Client) CreateOverridesWithContext(ctx context.Context, id string, overrides []Override) ([]Override, error) {
+	d := map[string][]Override{
+		"overrides": overrides,
+	}
+
+	resp, err := c.post(ctx, "/schedules/"+id+"/overrides", d, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return getOverridesFromResponse(c, resp)
+}
+
+func (c *Client) CreateOverrides(id string, o []Override) ([]Override, error) {
+	return c.CreateOverridesWithContext(context.Background(), id, o)
+}
+
 // DeleteOverride removes an override.
 //
 // Deprecated: Use DeleteOverrideWithContext instead.
@@ -387,4 +404,19 @@ func getOverrideFromResponse(c *Client, resp *http.Response) (*Override, error) 
 	}
 
 	return &o, nil
+}
+
+func getOverridesFromResponse(c *Client, resp *http.Response) ([]Override, error) {
+	var target map[string][]Override
+	if dErr := c.decodeJSON(resp, &target); dErr != nil {
+		return nil, fmt.Errorf("Could not decode JSON response: %v", dErr)
+	}
+
+	const rootNode = "overrides"
+	o, nodeOK := target[rootNode]
+	if !nodeOK {
+		return nil, fmt.Errorf("JSON response does not have %s field", rootNode)
+	}
+
+	return o, nil
 }
